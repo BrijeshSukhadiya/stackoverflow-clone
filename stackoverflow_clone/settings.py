@@ -44,6 +44,8 @@ REST_FRAMEWORK = {
 
 AUTH_USER_MODEL = 'core.CustomUser'
 
+REST_FRAMEWORK['DEFAULT_FILTER_BACKENDS'] = ['django_filters.rest_framework.DjangoFilterBackend']
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -56,6 +58,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'oauth2_provider',
     'core',
+    'django_filters',
 ]
 
 MIDDLEWARE = [
