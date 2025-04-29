@@ -16,6 +16,8 @@ class QuestionSerializer(serializers.ModelSerializer):
 
 class AnswerSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
+    fields = '__all__'
+    read_only_fields = ('author', 'is_accepted', 'created_at')
 
     class Meta:
         model = Answer

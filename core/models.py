@@ -21,6 +21,9 @@ class Answer(models.Model):
     body = models.TextField()
     is_accepted = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f'Answer by {self.author} on {self.question}'
 
 class Vote(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
