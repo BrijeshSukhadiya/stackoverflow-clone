@@ -1,11 +1,12 @@
 from django.shortcuts import render
-from rest_framework import viewsets, permissions, filters
-from .models import Question, Answer
+from rest_framework import viewsets, permissions, filters, status,APIView, Response
+from .models import Question, Answer, Vote
 from .serializers import QuestionSerializer, AnswerSerializer
 from .pagination import QuestionPagination
 from django_filters.rest_framework import DjangoFilterBackend
 from .permissions import IsAnswerAuthorOrReadOnly, IsQuestionAuthor
 from rest_framework.decorators import action
+from django.contrib.contenttypes.models import ContentType
 
 # Create your views here.
 
@@ -40,3 +41,30 @@ class AnswerViewSet(viewsets.ModelViewSet):
 
         return Response({'status': 'answer accepted'}, status=status.HTTP_200_OK)
 
+class VoteView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        model_type = request.data.get('model')
+        obj_id = request.data.get('id')
+        vote_value = int(request.data.get('vote'))  # 1 or -1
+
+        if model_type not in ['question', 'answer'] or vote_value not in [-1, 1]:
+            return Response({'error': 'Invalid input'}, status=status.HTTP_400_BAD_REQUEST)
+
+        model = Question if model_type == 'question' else Answer
+        try:
+            content_object = model.objects.get(pk=obj_id)
+        except model.DoesNotExist:
+            return Response({'error': 'Object not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        content_type = ContentType.objects.get_for_model(model)
+
+        vote, created = Vote.objects.update_or_create(
+            user=request.user,
+            content_type=content_type,
+            object_id=obj_id,
+            defaults={'vote': vote_value}
+        )
+
+        return Response({'status': 'voted', 'vote': vote_value}, status=status.HTTP_200_OK)
