@@ -1,15 +1,25 @@
 from django.shortcuts import render
-from rest_framework import viewsets, permissions, filters, status,APIView, Response
-from .models import Question, Answer, Vote
-from .serializers import QuestionSerializer, AnswerSerializer
-from .pagination import QuestionPagination
-from django_filters.rest_framework import DjangoFilterBackend
-from .permissions import IsAnswerAuthorOrReadOnly, IsQuestionAuthor
-from rest_framework.decorators import action
+from rest_framework import viewsets, permissions, filters, status, generics
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.decorators import action
 
-# Create your views here.
+from .models import Question, Answer, Vote
+from .serializers import (
+    QuestionSerializer,
+    AnswerSerializer,
+    UserRegisterSerializer,
+    UserProfileSerializer
+)
+from .pagination import QuestionPagination
+from .permissions import IsAnswerAuthorOrReadOnly, IsQuestionAuthor
 
+User = get_user_model()
+
+# -------------------- Questions --------------------
 class QuestionViewSet(viewsets.ModelViewSet):
     queryset = Question.objects.all().order_by('-created_at')
     serializer_class = QuestionSerializer
@@ -22,6 +32,7 @@ class QuestionViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
+# -------------------- Answers --------------------
 class AnswerViewSet(viewsets.ModelViewSet):
     queryset = Answer.objects.all().order_by('-created_at')
     serializer_class = AnswerSerializer
@@ -41,6 +52,7 @@ class AnswerViewSet(viewsets.ModelViewSet):
 
         return Response({'status': 'answer accepted'}, status=status.HTTP_200_OK)
 
+# -------------------- Voting --------------------
 class VoteView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -53,6 +65,7 @@ class VoteView(APIView):
             return Response({'error': 'Invalid input'}, status=status.HTTP_400_BAD_REQUEST)
 
         model = Question if model_type == 'question' else Answer
+
         try:
             content_object = model.objects.get(pk=obj_id)
         except model.DoesNotExist:
@@ -68,3 +81,17 @@ class VoteView(APIView):
         )
 
         return Response({'status': 'voted', 'vote': vote_value}, status=status.HTTP_200_OK)
+
+# -------------------- User Registration --------------------
+class RegisterView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserRegisterSerializer
+    permission_classes = [permissions.AllowAny]
+
+# -------------------- User Profile --------------------
+class UserProfileView(generics.RetrieveAPIView):
+    serializer_class = UserProfileSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user
