@@ -13,7 +13,4 @@ urlpatterns = [
     # User Management
     path('register/', RegisterView.as_view(), name='register'),
     path('profile/', UserProfileView.as_view(), name='profile'),
-
-    # OAuth2
-    path('o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
 ]

@@ -46,6 +46,10 @@ AUTH_USER_MODEL = 'core.CustomUser'
 
 REST_FRAMEWORK['DEFAULT_FILTER_BACKENDS'] = ['django_filters.rest_framework.DjangoFilterBackend']
 
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = 'noreply@example.com'
+
+
 # Application definition
 
 INSTALLED_APPS = [

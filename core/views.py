@@ -16,6 +16,7 @@ from .serializers import (
 )
 from .pagination import QuestionPagination
 from .permissions import IsAnswerAuthorOrReadOnly, IsQuestionAuthor
+from django.core.mail import send_mail
 
 User = get_user_model()
 
@@ -95,3 +96,26 @@ class UserProfileView(generics.RetrieveAPIView):
 
     def get_object(self):
         return self.request.user
+
+# Inside AnswerViewSet
+@action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated, IsQuestionAuthor])
+def accept(self, request, pk=None):
+    answer = self.get_object()
+
+    # Unmark all other answers to this question
+    Answer.objects.filter(question=answer.question).update(is_accepted=False)
+    answer.is_accepted = True
+    answer.save()
+
+    # Notify answer author
+    if answer.author.email:
+        send_mail(
+            subject='Your Answer was Accepted!',
+            message=f'Hi {answer.author.username},\n\n'
+                    f'Your answer to "{answer.question.title}" was accepted by the question author.',
+            from_email=None,
+            recipient_list=[answer.author.email],
+            fail_silently=True
+        )
+
+    return Response({'status': 'answer accepted'}, status=status.HTTP_200_OK)
